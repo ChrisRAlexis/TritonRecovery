@@ -1,57 +1,48 @@
-import AuthButton from '@/components/AuthButton'
-import ConnectSupabaseSteps from '@/components/ConnectSupabaseSteps'
-import SignUpUserSteps from '@/components/SignUpUserSteps'
-import Header from '@/components/Header'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@/utils/supabase'
-import ThemeToggle from '@/components/ThemeToggle'
+'use client'
 
-export default async function Index() {
-  const cookieStore = cookies()
+import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useEffect, useState } from 'react'
 
-  const canInitSupabaseClient = () => {
-    // This function is just for the interactive tutorial.
-    // Feel free to remove it once you have Supabase connected.
-    try {
-      createServerClient(cookieStore)
-      return true
-    } catch (e) {
-      return false
+export default function Dashboard() {
+  const session = useSession()
+  const supabase = useSupabaseClient()
+  const [userName, setUserName] = useState('')
+
+  useEffect(() => {
+    if (session) {
+      const fetchUser = async () => {
+        const { data } = await supabase.auth.getUser()
+        setUserName(data?.user?.email ?? 'Client')
+      }
+      fetchUser()
     }
+  }, [session])
+
+  if (!session) {
+    return (
+      <p className="p-4">You must be signed in to access the client portal.</p>
+    )
   }
 
-  const isSupabaseConnected = canInitSupabaseClient()
-
   return (
-    <div className="flex w-full flex-1 flex-col items-center gap-20">
-      <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
-        <div className="flex w-full max-w-4xl items-center justify-between p-3 text-sm">
-          {isSupabaseConnected && <AuthButton />}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <h1 className="mb-4 text-2xl font-bold">Welcome, {userName}</h1>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-xl bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold">Deals Submitted</h2>
+          <p className="mt-2 text-3xl font-bold">5</p>
         </div>
-      </nav>
-
-      <div className="flex max-w-4xl flex-1 flex-col gap-20 px-3">
-        <Header />
-        <main className="flex flex-1 flex-col gap-6">
-          <h2 className="mb-4 text-4xl font-bold">Next steps</h2>
-          {isSupabaseConnected ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-        </main>
+        <div className="rounded-xl bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold">Total Collected</h2>
+          <p className="mt-2 text-3xl font-bold">$23,000</p>
+        </div>
       </div>
-
-      <footer className="w-full justify-center border-t border-t-foreground/10 p-8 text-center text-xs">
-        <p className="mb-6">
-          Powered by{' '}
-          <a
-            href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-            target="_blank"
-            className="font-bold hover:underline"
-            rel="noreferrer"
-          >
-            Supabase
-          </a>
+      <div className="mt-6">
+        <p className="text-gray-600">
+          Use the sidebar or navigation to submit new deals, view messages, or
+          check status.
         </p>
-        <ThemeToggle />
-      </footer>
+      </div>
     </div>
   )
 }
